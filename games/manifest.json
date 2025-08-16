@@ -1,0 +1,20 @@
+[
+  {
+    "id": "pongish",
+    "name": "Pongish",
+    "author": "You",
+    "added": "2025-08-15",
+    "path": "games/pongish.js",
+    "cover": "",
+    "instructions": "Move mouse to control the paddle. Keep the ball in play!"
+  },
+  {
+    "id": "fallblocks",
+    "name": "Falling Blocks",
+    "author": "You",
+    "added": "2025-08-15",
+    "path": "games/fallblocks.js",
+    "cover": "",
+    "instructions": "← → to move, ↓ to drop faster. Clear lines!"
+  }
+]
