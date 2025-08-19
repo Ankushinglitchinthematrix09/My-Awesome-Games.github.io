@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Clicker - GameHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .target-color {
+            margin: 20px 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .color-display {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 20px auto;
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .color-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-button:hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .color-button:active {
+            transform: scale(0.95);
+        }
+
+        .color-button.correct {
+            animation: correctPulse 0.6s ease-out;
+        }
+
+        .color-button.wrong {
+            animation: wrongShake 0.5s ease-in-out;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+            50% { transform: scale(1.2); box-shadow: 0 10px 30px rgba(76, 175, 80, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #66BB6A);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .time-bar {
+            width: 100%;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .time-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #f44336);
+            border-radius: 8px;
+            transition: width 0.1s linear;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 20px 10px;
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            border: 2px solid #feca57;
+        }
+
+        .streak-display {
+            font-size: 1.1rem;
+            margin: 10px 0;
+            color: #feca57;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-color: #feca57;
+        }
+
+        .difficulty-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .color-options {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .color-button {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .color-display {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .difficulty-selector {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 Color Clicker</h1>
+        
+        <div class="game-info">
+            <div>Score: <span id="score">0</span></div>
+            <div>Best: <span id="bestScore">0</span></div>
+        </div>
+        
+        <div class="streak-display">
+            Streak: <span id="streak">0</span> 🔥
+        </div>
+        
+        <div class="difficulty-selector">
+            <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+            <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+            <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+        </div>
+        
+        <div class="target-color">
+            Click: <span id="targetColorName">Red</span>
+        </div>
+        
+        <div class="color-display" id="targetColorDisplay"></div>
+        
+        <div class="time-bar">
+            <div class="time-fill" id="timeFill"></div>
+        </div>
+        
+        <div class="color-options" id="colorOptions"></div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="start-btn" id="startBtn" onclick="startGame()">Start Game</button>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <div class="streak-display">Final Streak: <span id="finalStreak">0</span></div>
+            <p>Score: <span id="finalScore">0</span></p>
+            <div id="newRecordText" style="color: #4CAF50; font-weight: bold; margin: 10px 0; display: none;">
+                🏆 New Best Score! 🏆
+            </div>
+            <button class="start-btn" onclick="startGame()">Play Again</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <p>• Click the color that matches the target color name</p>
+            <p>• Be fast! You have limited time for each round</p>
+            <p>• Build streaks for bonus points</p>
+            <p>• Higher difficulty = more colors + less time</p>
+            <p><strong>Scoring:</strong> Correct = +10 points, Streak bonus = +5 per streak level</p>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const scoreElement = document.getElementById('score');
+        const bestScoreElement = document.getElementById('bestScore');
+        const streakElement = document.getElementById('streak');
+        const targetColorNameElement = document.getElementById('targetColorName');
+        const targetColorDisplayElement = document.getElementById('targetColorDisplay');
+        const colorOptionsElement = document.getElementById('colorOptions');
+        const timeFillElement = document.getElementById('timeFill');
+        const progressFillElement = document.getElementById('progressFill');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalStreakElement = document.getElementById('finalStreak');
+        const newRecordTextElement = document.getElementById('newRecordText');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const startBtn = document.getElementById('startBtn');
+
+        // Game variables
+        let gameRunning = false;
+        let score = 0;
+        let streak = 0;
+        let round = 0;
+        let timeLeft = 100;
+        let currentTarget = '';
+        let currentDifficulty = 'easy';
+        let gameTimer = null;
+        let roundTimer = null;
+        let bestScore = localStorage.getItem('colorClickerBest') || 0;
+
+        // Color definitions
+        const colors = {
+            red: { name: 'Red', hex: '#f44336' },
+            blue: { name: 'Blue', hex: '#2196F3' },
+            green: { name: 'Green', hex: '#4CAF50' },
+            yellow: { name: 'Yellow', hex: '#FFEB3B' },
+            purple: { name: 'Purple', hex: '#9C27B0' },
+            orange: { name: 'Orange', hex: '#FF9800' },
+            pink: { name: 'Pink', hex: '#E91E63' },
+            cyan: { name: 'Cyan', hex: '#00BCD4' },
+            lime: { name: 'Lime', hex: '#8BC34A' },
+            indigo: { name: 'Indigo', hex: '#3F51B5' }
+        };
+
+        const colorKeys = Object.keys(colors);
+
+        // Difficulty settings
+        const difficulties = {
+            easy: { colors: 4, time: 3000, rounds: 10 },
+            medium: { colors: 6, time: 2500, rounds: 15 },
+            hard: { colors: 8, time: 2000, rounds: 20 }
+        };
+
+        // Initialize
+        bestScoreElement.textContent = bestScore;
+
+        // Difficulty selection
+        difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (gameRunning) return;
+                
+                difficultyButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDifficulty = btn.dataset.difficulty;
+            });
+        });
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            streak = 0;
+            round = 0;
+            
+            scoreElement.textContent = score;
+            streakElement.textContent = streak;
+            gameOverElement.style.display = 'none';
+            startBtn.style.display = 'none';
+            
+            nextRound();
+        }
+
+        function nextRound() {
+            if (round >= difficulties[currentDifficulty].rounds) {
+                endGame();
+                return;
+            }
+            
+            round++;
+            timeLeft = 100;
+            
+            // Update progress bar
+            const progress = (round / difficulties[currentDifficulty].rounds) * 100;
+            progressFillElement.style.width = progress + '%';
+            
+            generateRound();
+            startRoundTimer();
+        }
+
+        function generateRound() {
+            const difficulty = difficulties[currentDifficulty];
+            const availableColors = colorKeys.slice(0, difficulty.colors);
+            
+            // Choose target color
+            const targetKey = availableColors[Math.floor(Math.random() * availableColors.length)];
+            currentTarget = targetKey;
+            
+            // Set target display
+            targetColorNameElement.textContent = colors[targetKey].name;
+            targetColorDisplayElement.style.backgroundColor = colors[targetKey].hex;
+            
+            // Generate color options (including correct answer)
+            const options = [targetKey];
+            while (options.length < 4) {
+                const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                if (!options.includes(randomColor)) {
+                    options.push(randomColor);
+                }
+            }
+            
+            // Shuffle options
+            shuffleArray(options);
+            
+            // Create color buttons
+            colorOptionsElement.innerHTML = '';
+            options.forEach(colorKey => {
+                const button = document.createElement('div');
+                button.className = 'color-button';
+                button.style.backgroundColor = colors[colorKey].hex;
+                button.dataset.color = colorKey;
+                button.addEventListener('click', () => handleColorClick(colorKey));
+                colorOptionsElement.appendChild(button);
+            });
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function handleColorClick(selectedColor) {
+            if (!gameRunning) return;
+            
+            clearTimeout(roundTimer);
+            const button = document.querySelector(`[data-color="${selectedColor}"]`);
+            
+            if (selectedColor === currentTarget) {
+                // Correct answer
+                streak++;
+                score += 10 + (streak * 5); // Streak bonus
+                button.classList.add('correct');
+                
+                setTimeout(() => {
+                    button.classList.remove('correct');
+                    nextRound();
+                }, 600);
+            } else {
+                // Wrong answer
+                streak = 0;
+                button.classList.add('wrong');
+                
+                setTimeout(() => {
+                    button.classList.remove('wrong');
+                    nextRound();
+                }, 500);
+            }
+            
+            scoreElement.textContent = score;
+            streakElement.textContent = streak;
+        }
+
+        function startRoundTimer() {
+            const difficulty = difficulties[currentDifficulty];
+            const interval = difficulty.time / 100;
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timeFillElement.style.width = timeLeft + '%';
+                
+                if (timeLeft <= 0) {
+                    clearInterval(gameTimer);
+                    streak = 0;
+                    streakElement.textContent = streak;
+                    nextRound();
+                }
+            }, interval);
+            
+            // Auto-timeout
+            roundTimer = setTimeout(() => {
+                clearInterval(gameTimer);
+                streak = 0;
+                streakElement.textContent = streak;
+                nextRound();
+            }, difficulty.time);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearTimeout(roundTimer);
+            
+            finalScoreElement.textContent = score;
+            finalStreakElement.textContent = streak;
+            
+            // Check for new best score
+            if (score > bestScore) {
+                bestScore = score;
+                bestScoreElement.textContent = bestScore;
+                localStorage.setItem('colorClickerBest', bestScore);
+                newRecordTextElement.style.display = 'block';
+            } else {
+                newRecordTextElement.style.display = 'none';
+            }
+            
+            gameOverElement.style.display = 'block';
+            startBtn.style.display = 'inline-block';
+            
+            // Reset UI
+            progressFillElement.style.width = '0%';
+            timeFillElement.style.width = '100%';
+        }
+
+        // Touch event handling for mobile
+        let touchStartTime = 0;
+        
+        colorOptionsElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartTime = Date.now();
+        });
+        
+        colorOptionsElement.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            
+            // Only register as click if touch was brief
+            if (touchDuration < 200) {
+                const target = document.elementFromPoint(
+                    e.changedTouches[0].clientX,
+                    e.changedTouches[0].clientY
+                );
+                
+                if (target && target.classList.contains('color-button')) {
+                    handleColorClick(target.dataset.color);
+                }
+            }
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            const colorButtons = document.querySelectorAll('.color-button');
+            let index = -1;
+            
+            switch (e.key) {
+                case '1':
+                    index = 0;
+                    break;
+                case '2':
+                    index = 1;
+                    break;
+                case '3':
+                    index = 2;
+                    break;
+                case '4':
+                    index = 3;
+                    break;
+            }
+            
+            if (index >= 0 && index < colorButtons.length) {
+                e.preventDefault();
+                const selectedColor = colorButtons[index].dataset.color;
+                handleColorClick(selectedColor);
+            }
+        });
+
+        // Initialize first color setup
+        if (!gameRunning) {
+            generateRound();
+        }
+    </script>
+</body>
+</html>
