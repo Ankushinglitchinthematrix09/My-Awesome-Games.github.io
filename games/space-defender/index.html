@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Defender - GameHub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-display {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .game-board {
+            background: #000;
+            border: 3px solid #333;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(72, 219, 251, 0.3);
+        }
+
+        .hud {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+
+        .hud-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #66BB6A);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 250px;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .shoot { grid-column: 2; grid-row: 2; background: linear-gradient(45deg, #f44336, #ff5722); }
+        .right { grid-column: 3; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 3; }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 10;
+            border: 2px solid #ff6b6b;
+        }
+
+        .power-up {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #feca57, #ff6b6b);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: none;
+            animation: powerUpPulse 1s infinite alternate;
+        }
+
+        @keyframes powerUpPulse {
+            from { transform: scale(1); box-shadow: 0 0 10px rgba(254, 202, 87, 0.5); }
+            to { transform: scale(1.05); box-shadow: 0 0 20px rgba(254, 202, 87, 0.8); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .game-display {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-buttons {
+                max-width: 200px;
+            }
+            
+            .control-btn {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Star field animation */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            from { opacity: 0.3; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🚀 Space Defender</h1>
+        
+        <div class="game-display">
+            <div class="hud">
+                <div class="hud-item">
+                    <span>Score:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="hud-item">
+                    <span>Wave:</span>
+                    <span id="wave">1</span>
+                </div>
+                <div class="hud-item">
+                    <span>Enemies:</span>
+                    <span id="enemies">0</span>
+                </div>
+                <div>
+                    Health:
+                    <div class="health-bar">
+                        <div class="health-fill" id="healthFill" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="hud-item">
+                    <span>High Score:</span>
+                    <span id="highScore">0</span>
+                </div>
+            </div>
+            
+            <div style="position: relative;">
+                <canvas id="gameCanvas" class="game-board" width="400" height="500"></canvas>
+                
+                <div class="game-over" id="gameOver">
+                    <h2>Game Over!</h2>
+                    <p>Wave Reached: <span id="finalWave">1</span></p>
+                    <p>Final Score: <span id="finalScore">0</span></p>
+                    <div id="newHighScore" style="color: #4CAF50; font-weight: bold; margin: 10px 0; display: none;">
+                        🏆 New High Score! 🏆
+                    </div>
+                    <button class="start-btn" onclick="startGame()">Play Again</button>
+                </div>
+                
+                <div class="power-up" id="powerUpDisplay">
+                    Multi-Shot Active!
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="start-btn" id="startBtn" onclick="startGame()">Start Game</button>
+            <button class="start-btn" id="pauseBtn" onclick="pauseGame()" style="display: none;">Pause</button>
+        </div>
+        
+        <!-- Mobile Controls -->
+        <div class="control-buttons">
+            <button class="control-btn up" ontouchstart="startMoving('up')" ontouchend="stopMoving('up')">↑</button>
+            <button class="control-btn left" ontouchstart="startMoving('left')" ontouchend="stopMoving('left')">←</button>
+            <button class="control-btn shoot" ontouchstart="startShooting()" ontouchend="stopShooting()">🔥</button>
+            <button class="control-btn right" ontouchstart="startMoving('right')" ontouchend="stopMoving('right')">→</button>
+            <button class="control-btn down" ontouchstart="startMoving('down')" ontouchend="stopMoving('down')">↓</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <p><strong>Desktop:</strong> Arrow keys to move, Spacebar to shoot</p>
+            <p><strong>Mobile:</strong> Use control buttons (hold fire button for continuous shooting)</p>
+            <p>• Destroy all enemies to advance to the next wave</p>
+            <p>• Collect power-ups for temporary multi-shot</p>
+            <p>• Don't let enemies reach you or shoot you!</p>
+            <p>• Each wave gets progressively harder</p>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const waveElement = document.getElementById('wave');
+        const enemiesElement = document.getElementById('enemies');
+        const healthFillElement = document.getElementById('healthFill');
+        const highScoreElement = document.getElementById('highScore');
+        const gameOverElement = document.getElementById('gameOver');
+        const powerUpDisplayElement = document.getElementById('powerUpDisplay');
+        const finalWaveElement = document.getElementById('finalWave');
+        const finalScoreElement = document.getElementById('finalScore');
+        const newHighScoreElement = document.getElementById('newHighScore');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        // Game variables
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoop;
+        let keys = {};
+        let mobileControls = {};
+        
+        // Game objects
+        let player = { x: 200, y: 450, width: 30, height: 30, speed: 5 };
+        let bullets = [];
+        let enemies = [];
+        let powerUps = [];
+        let stars = [];
+        
+        // Game state
+        let score = 0;
+        let wave = 1;
+        let health = 100;
+        let enemyCount = 0;
+        let multiShot = false;
+        let multiShotTime = 0;
+        let highScore = localStorage.getItem('spaceDefenderHighScore') || 0;
+        let isShooting = false;
+        let shootCooldown = 0;
+
+        // Initialize
+        highScoreElement.textContent = highScore;
+        generateStars();
+
+        function generateStars() {
+            stars = [];
+            for (let i = 0; i < 50; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 1,
+                    speed: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function startGame() {
+            // Reset game state
+            player = { x: 200, y: 450, width: 30, height: 30, speed: 5 };
+            bullets = [];
+            enemies = [];
+            powerUps = [];
+            score = 0;
+            wave = 1;
+            health = 100;
+            multiShot = false;
+            multiShotTime = 0;
+            
+            gameRunning = true;
+            gamePaused = false;
+            
+            // Update UI
+            updateDisplay();
+            gameOverElement.style.display = 'none';
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+            
+            spawnWave();
+            
+            // Start game loop
+            gameLoop = requestAnimationFrame(gameStep);
+        }
+
+        function pauseGame() {
+            if (gameRunning) {
+                if (gamePaused) {
+                    gameLoop = requestAnimationFrame(gameStep);
+                    pauseBtn.textContent = 'Pause';
+                    gamePaused = false;
+                } else {
+                    cancelAnimationFrame(gameLoop);
+                    pauseBtn.textContent = 'Resume';
+                    gamePaused = true;
+                }
+            }
+        }
+
+        function gameStep() {
+            if (!gameRunning || gamePaused) return;
+            
+            updateGame();
+            drawGame();
+            
+            gameLoop = requestAnimationFrame(gameStep);
+        }
+
+        function updateGame() {
+            // Update stars
+            stars.forEach(star => {
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+
+            // Update player movement
+            if (keys['ArrowLeft'] || keys['KeyA'] || mobileControls.left) {
+                player.x = Math.max(0, player.x - player.speed);
+            }
+            if (keys['ArrowRight'] || keys['KeyD'] || mobileControls.right) {
+                player.x = Math.min(canvas.width - player.width, player.x + player.speed);
+            }
+            if (keys['ArrowUp'] || keys['KeyW'] || mobileControls.up) {
+                player.y = Math.max(0, player.y - player.speed);
+            }
+            if (keys['ArrowDown'] || keys['KeyS'] || mobileControls.down) {
+                player.y = Math.min(canvas.height - player.height, player.y + player.speed);
+            }
+
+            // Handle shooting
+            if (shootCooldown > 0) shootCooldown--;
+            
+            if ((keys[' '] || isShooting) && shootCooldown <= 0) {
+                shoot();
+                shootCooldown = 10;
+            }
+
+            // Update bullets
+            bullets = bullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                return bullet.y > 0;
+            });
+
+            // Update enemies
+            enemies.forEach(enemy => {
+                enemy.y += enemy.speed;
+                enemy.x += Math.sin(enemy.y * 0.01) * enemy.wobble;
+            });
+
+            // Update power-ups
+            powerUps.forEach(powerUp => {
+                powerUp.y += 2;
+                powerUp.rotation += 0.1;
+            });
+
+            // Remove off-screen entities
+            enemies = enemies.filter(enemy => enemy.y < canvas.height + 50);
+            powerUps = powerUps.filter(powerUp => powerUp.y < canvas.height);
+
+            // Check collisions
+            checkCollisions();
+
+            // Update power-up timer
+            if (multiShot) {
+                multiShotTime--;
+                if (multiShotTime <= 0) {
+                    multiShot = false;
+                    powerUpDisplayElement.style.display = 'none';
+                }
+            }
+
+            // Check wave completion
+            if (enemies.length === 0 && enemyCount === 0) {
+                wave++;
+                setTimeout(spawnWave, 2000);
+                
+                // Heal player slightly between waves
+                health = Math.min(100, health + 10);
+            }
+
+            updateDisplay();
+        }
+
+        function shoot() {
+            if (multiShot) {
+                // Triple shot
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    speed: 8
+                });
+                bullets.push({
+                    x: player.x + player.width / 2 - 8,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    speed: 8
+                });
+                bullets.push({
+                    x: player.x + player.width / 2 + 4,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    speed: 8
+                });
+            } else {
+                // Single shot
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    speed: 8
+                });
+            }
+        }
+
+        function spawnWave() {
+            enemyCount = wave * 3 + Math.floor(wave / 3);
+            
+            for (let i = 0; i < enemyCount; i++) {
+                setTimeout(() => {
+                    spawnEnemy();
+                }, i * 1000);
+            }
+        }
+
+        function spawnEnemy() {
+            if (!gameRunning) return;
+            
+            const enemy = {
+                x: Math.random() * (canvas.width - 30),
+                y: -50,
+                width: 25,
+                height: 25,
+                speed: Math.random() * 2 + 1 + wave * 0.2,
+                wobble: Math.random() * 0.5,
+                health: 1 + Math.floor(wave / 5)
+            };
+            
+            enemies.push(enemy);
+            enemyCount--;
+        }
+
+        function checkCollisions() {
+            // Bullet-enemy collisions
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (isColliding(bullet, enemy)) {
+                        enemy.health--;
+                        bullets.splice(bulletIndex, 1);
+                        
+                        if (enemy.health <= 0) {
+                            score += 10 + wave * 5;
+                            enemies.splice(enemyIndex, 1);
+                            
+                            // Random power-up drop
+                            if (Math.random() < 0.1) {
+                                powerUps.push({
+                                    x: enemy.x,
+                                    y: enemy.y,
+                                    width: 20,
+                                    height: 20,
+                                    rotation: 0
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Player-enemy collisions
+            enemies.forEach((enemy, index) => {
+                if (isColliding(player, enemy)) {
+                    health -= 20;
+                    enemies.splice(index, 1);
+                    
+                    if (health <= 0) {
+                        endGame();
+                    }
+                }
+            });
+
+            // Player-powerup collisions
+            powerUps.forEach((powerUp, index) => {
+                if (isColliding(player, powerUp)) {
+                    multiShot = true;
+                    multiShotTime = 300; // 5 seconds at 60fps
+                    powerUps.splice(index, 1);
+                    powerUpDisplayElement.style.display = 'block';
+                }
+            });
+        }
+
+        function isColliding(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stars
+            ctx.fillStyle = '#fff';
+            stars.forEach(star => {
+                ctx.globalAlpha = star.size / 3;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            ctx.globalAlpha = 1;
+
+            // Draw player
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Player details
+            ctx.fillStyle = '#66BB6A';
+            ctx.fillRect(player.x + 5, player.y - 5, 20, 8);
+
+            // Draw bullets
+            ctx.fillStyle = '#feca57';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+
+            // Draw enemies
+            ctx.fillStyle = '#f44336';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                
+                // Enemy details
+                ctx.fillStyle = '#e57373';
+                ctx.fillRect(enemy.x + 5, enemy.y + 20, 15, 8);
+                ctx.fillStyle = '#f44336';
+            });
+
+            // Draw power-ups
+            ctx.fillStyle = '#feca57';
+            powerUps.forEach(powerUp => {
+                ctx.save();
+                ctx.translate(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2);
+                ctx.rotate(powerUp.rotation);
+                ctx.fillRect(-powerUp.width/2, -powerUp.height/2, powerUp.width, powerUp.height);
+                ctx.restore();
+            });
+        }
+
+        function updateDisplay() {
+            scoreElement.textContent = score;
+            waveElement.textContent = wave;
+            enemiesElement.textContent = enemies.length;
+            healthFillElement.style.width = Math.max(0, health) + '%';
+            
+            // Change health bar color based on health
+            if (health > 60) {
+                healthFillElement.style.background = 'linear-gradient(45deg, #4CAF50, #66BB6A)';
+            } else if (health > 30) {
+                healthFillElement.style.background = 'linear-gradient(45deg, #ff9800, #ffb74d)';
+            } else {
+                healthFillElement.style.background = 'linear-gradient(45deg, #f44336, #e57373)';
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(gameLoop);
+            
+            finalWaveElement.textContent = wave;
+            finalScoreElement.textContent = score;
+            
+            // Check for new high score
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.textContent = highScore;
+                localStorage.setItem('spaceDefenderHighScore', highScore);
+                newHighScoreElement.style.display = 'block';
+            } else {
+                newHighScoreElement.style.display = 'none';
+            }
+            
+            gameOverElement.style.display = 'block';
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+            powerUpDisplayElement.style.display = 'none';
+        }
+
+        // Mobile control functions
+        function startMoving(direction) {
+            mobileControls[direction] = true;
+        }
+
+        function stopMoving(direction) {
+            mobileControls[direction] = false;
+        }
+
+        function startShooting() {
+            isShooting = true;
+        }
+
+        function stopShooting() {
+            isShooting = false;
+        }
+
+        // Keyboard event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            e.preventDefault();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+            e.preventDefault();
+        });
+
+        // Touch event prevention for mobile controls
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => e.preventDefault());
+            btn.addEventListener('touchend', (e) => e.preventDefault());
+        });
+
+        // Initial draw
+        drawGame();
+    </script>
+</body>
+</html>
